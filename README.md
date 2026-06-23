@@ -1,104 +1,138 @@
-# NYC-Taxi
+# 🚕 NYC Taxi Trip Duration Predictor
 
-==============================
+An end-to-end Machine Learning project that predicts how long a taxi trip in New York City will take, based on pickup/dropoff location, time of day, and other trip details.
 
-Machine Learning project to predict trip duration for taxis in NYC
+This project demonstrates a complete MLOps workflow — from raw data to a deployed, interactive prediction app.
 
-## Important
+---
 
-This code will give error until the project is installed as a package in the environment that has all the dependencies for the project.
+## 📌 What this project does
 
-After creation of environment and installation of all required packages using pip run this command in the command terminal.
+Given a **pickup location**, **dropoff location**, and basic trip details (date, hour, passenger count, vendor), the model predicts the **expected trip duration in minutes**. It mirrors the kind of ETA prediction used by real ride-hailing apps like Uber and Ola.
 
-```cmd
+The dataset is based on the **Kaggle NYC Taxi Trip Duration** competition.
+
+---
+
+## 🏗️ Project Architecture
+
+The project follows a modular, reproducible ML pipeline managed with **DVC**:
+
+```
+Raw data (zipped)
+      ↓  extract_dataset
+Extracted CSVs
+      ↓  make_dataset (train/val split)
+Interim data
+      ↓  modify_features
+Transformed data
+      ↓  build_features (feature engineering)
+Built features
+      ↓  data_preprocessing (scaling/encoding)
+Final processed data
+      ↓  train_model (RandomForest / XGBoost)
+Trained model
+      ↓  predict_model + plot_results
+Predictions & evaluation plots
+```
+
+Each stage is defined in `dvc.yaml`, with hyperparameters controlled via `params.yaml`, making the entire pipeline reproducible with a single command: `dvc repro`.
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Tools |
+|---|---|
+| Data versioning & pipeline | DVC |
+| Modeling | scikit-learn (RandomForest), XGBoost |
+| Backend API | FastAPI |
+| Frontend | Streamlit |
+| Geocoding | OpenStreetMap Nominatim API |
+| Mapping | Folium |
+| Containerization | Docker |
+| CI/CD | GitHub Actions |
+
+---
+
+## 🖥️ Interactive Frontend
+
+On top of the FastAPI prediction backend, this project includes a **Streamlit web app** that lets users:
+
+- Enter pickup and dropoff **addresses** (auto-converted to coordinates via geocoding — no manual lat/long needed)
+- Pick trip date, hour, passenger count, and vendor
+- Get an instant **predicted trip duration** and **estimated fare**
+- View the pickup → dropoff route on an interactive map
+
+---
+
+## ⚙️ Setup & Usage
+
+### 1. Clone the repo and create a virtual environment
+```bash
+git clone https://github.com/Kashish-x1/nyc-taxi-mlops.git
+cd nyc-taxi-mlops
+python -m venv venv
+venv\Scripts\activate   # on Windows
+```
+
+### 2. Install dependencies
+```bash
+pip install -r requirements.txt
 pip install -e .
 ```
 
-| This will fix all the import statement errors such as `ModuleNotFoundError` when recreating pipelines using command
+> **Note:** This project must be installed as an editable package (`pip install -e .`) for internal imports (`src/...`) to work correctly.
 
-```cmd
+### 3. Add the raw dataset
+Download `train.zip` and `test.zip` from the Kaggle NYC Taxi Trip Duration competition and place them in:
+```
+data/raw/zipped/train.zip
+data/raw/zipped/test.zip
+```
+
+### 4. Run the ML pipeline
+```bash
 dvc repro
 ```
+This runs every stage — extraction, preprocessing, feature engineering, training, evaluation — end to end.
 
-## CI/CD through GitHub Actions
-
-The CI/CD workflow will throw an error while creating the CML report because no Personal Access Token is linked to the repository for safety purposes.
-
-I advice the user to generate his/her own access token as explained in the Session-5 and run this code in their own repository and it will work without any errors.
-
-> Thanks everyone for following the content with dedication and patience.👏
-
-## Docker
-
-Download Docker Desktop from the link [download here](https://www.docker.com/products/docker-desktop/)
-
-Once you are in project folder just type in the command
-
-```cmd
-docker init
+### 5. Start the backend API
+```bash
+uvicorn app:app --reload
 ```
 
-The result will show something like this
-
-![alt text](screenshots/image.png)
-
-> It is advised to check the DOCKERFILE before committing to the build image phase. You can check the DOCKERFILE in the project.
-
-The next command to run is
-
-```cmd
-docker compose up --build
+### 6. Start the frontend app
+In a second terminal:
+```bash
+streamlit run streamlit_app.py
 ```
 
-![alt text](screenshots/image1.png)
+---
 
-## Project Organization
+## 📊 Model Performance
 
-------------
+| Metric | Train | Validation |
+|---|---|---|
+| R² Score | 0.808 | 0.801 |
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+The close train/validation scores indicate the model generalizes well without significant overfitting.
 
-------------
+---
+
+## 📁 Project Structure
+
+```
+├── data/                  # Raw, interim, and processed data (DVC-tracked)
+├── src/                   # Source code (data, features, models, visualization)
+├── models/                # Trained models & transformers
+├── plots/                 # Evaluation plots
+├── app.py                 # FastAPI backend
+├── streamlit_app.py       # Streamlit frontend
+├── dvc.yaml               # DVC pipeline definition
+├── params.yaml            # Pipeline hyperparameters
+└── requirements.txt       # Python dependencies
+```
+
+---
+
